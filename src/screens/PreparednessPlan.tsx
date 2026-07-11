@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, CheckCircle2, Circle } from 'lucide-react';
 import { api } from '../api';
+import { Card } from '../components/ui/Card';
 import { Chip } from '../components/ui/Chip';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { getProfile, DEFAULT_PROFILE } from '../lib/profile';
 import { getStoredPlan, savePlan } from '../lib/plan';
 import { PlanItem, Phase } from '../types';
@@ -65,7 +67,7 @@ export function PreparednessPlan() {
         </button>
       </div>
 
-      <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)]">
+      <Card>
         <div className="flex justify-between items-center mb-3">
           <span className="text-sm font-medium">Overall Progress</span>
           <span className="text-sm font-medium">
@@ -78,7 +80,7 @@ export function PreparednessPlan() {
             style={{ width: `${progress}%` }}
           />
         </div>
-      </div>
+      </Card>
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {(['Before', 'During', 'After'] as Phase[]).map(p => (
@@ -96,12 +98,12 @@ export function PreparednessPlan() {
           [1, 2, 3].map(i => (
             <div
               key={i}
-              className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-3 animate-pulse"
+              className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-3"
             >
-              <div className="w-5 h-5 rounded-full bg-[var(--border)]" />
+              <LoadingSkeleton className="w-5 h-5 rounded-full shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-[var(--border)] rounded w-3/4" />
-                <div className="h-3 bg-[var(--border)] rounded w-1/2" />
+                <LoadingSkeleton className="h-4 w-3/4" />
+                <LoadingSkeleton className="h-3 w-1/2" />
               </div>
             </div>
           ))}

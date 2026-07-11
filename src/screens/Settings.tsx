@@ -2,6 +2,7 @@ import { MapPin, Globe, Shield, Moon, Sun } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { DEFAULT_PROFILE, clearProfile, getProfile } from '../lib/profile';
 import { clearPlan } from '../lib/plan';
+import { Card } from '../components/ui/Card';
 
 export function Settings() {
   const { theme, setTheme, setOnboardingComplete, navigate } = useAppContext();
@@ -78,7 +79,7 @@ export function Settings() {
         </div>
       </div>
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex items-start gap-3">
+      <Card className="flex items-start gap-3">
         <Shield className="w-5 h-5 text-[var(--text-secondary)] shrink-0 mt-0.5" />
         <div>
           <h4 className="text-[15px] font-medium mb-1">Privacy & Data</h4>
@@ -87,7 +88,7 @@ export function Settings() {
             to use Monsoon Ready.
           </p>
         </div>
-      </div>
+      </Card>
 
       <button
         onClick={handleReset}

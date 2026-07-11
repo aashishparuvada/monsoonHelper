@@ -6,6 +6,8 @@ import { useAsyncData } from '../hooks/useAsyncData';
 import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
 import { getStoredPlan } from '../lib/plan';
 import { LiveWeather, Phase } from '../types';
+import { Card } from '../components/ui/Card';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { PhaseIndicator } from '../components/ui/PhaseIndicator';
 
 export function Home() {
@@ -62,7 +64,7 @@ export function Home() {
 
       <PhaseIndicator phase={phase} onChange={setPhase} />
 
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 relative overflow-hidden">
+      <Card className="relative overflow-hidden">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-2 text-[var(--color-status-amber)]">
             <CloudRain className="w-5 h-5" />
@@ -78,10 +80,10 @@ export function Home() {
         </div>
 
         {(status === 'idle' || status === 'loading') && (
-          <div className="space-y-2 animate-pulse">
-            <div className="h-4 bg-[var(--border)] rounded w-3/4"></div>
-            <div className="h-4 bg-[var(--border)] rounded w-full"></div>
-            <div className="h-4 bg-[var(--border)] rounded w-5/6"></div>
+          <div className="space-y-2">
+            <LoadingSkeleton className="h-4 w-3/4" />
+            <LoadingSkeleton className="h-4 w-full" />
+            <LoadingSkeleton className="h-4 w-5/6" />
           </div>
         )}
 
@@ -102,7 +104,7 @@ export function Home() {
         {status === 'success' && summary && (
           <p className="text-[15px] leading-relaxed text-[var(--text-secondary)]">{summary}</p>
         )}
-      </div>
+      </Card>
 
       <div className="grid grid-cols-2 gap-4">
         <button

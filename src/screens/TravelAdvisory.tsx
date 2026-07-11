@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { Map, Navigation } from 'lucide-react';
 import { api } from '../api';
 import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { LocationAutocomplete } from '../components/ui/LocationAutocomplete';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { LiveWeather, LocationRef, ResolvedLocation } from '../types';
@@ -73,17 +75,17 @@ export function TravelAdvisory() {
       )}
 
       {status === 'loading' && (
-        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-pulse">
+        <Card>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-[var(--border)]" />
-            <div className="w-32 h-5 bg-[var(--border)] rounded" />
+            <LoadingSkeleton className="w-10 h-10 rounded-full shrink-0" />
+            <LoadingSkeleton className="w-32 h-5" />
           </div>
           <div className="space-y-2">
-            <div className="w-full h-4 bg-[var(--border)] rounded" />
-            <div className="w-full h-4 bg-[var(--border)] rounded" />
-            <div className="w-2/3 h-4 bg-[var(--border)] rounded" />
+            <LoadingSkeleton className="w-full h-4" />
+            <LoadingSkeleton className="w-full h-4" />
+            <LoadingSkeleton className="w-2/3 h-4" />
           </div>
-        </div>
+        </Card>
       )}
 
       {status === 'error' && (
@@ -95,7 +97,7 @@ export function TravelAdvisory() {
       )}
 
       {status === 'success' && advisory && (
-        <div className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[var(--border)]">
             <div className="w-10 h-10 rounded-full bg-[var(--color-brand)]/10 flex items-center justify-center text-[var(--color-brand)]">
               <Navigation className="w-5 h-5" />
@@ -116,7 +118,7 @@ export function TravelAdvisory() {
           </div>
 
           <p className="text-[15px] leading-relaxed">{advisory}</p>
-        </div>
+        </Card>
       )}
     </div>
   );

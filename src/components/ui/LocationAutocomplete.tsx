@@ -26,8 +26,16 @@ export function LocationAutocomplete({
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Selecting a suggestion updates `value` to the picked name, which would
+  // otherwise re-trigger this same debounced search and pop the dropdown
+  // back open a moment after the user just closed it by choosing an option.
+  const justSelectedRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (value === justSelectedRef.current) {
+      justSelectedRef.current = null;
+      return;
+    }
     if (value.trim().length < 2) {
       setResults([]);
       setOpen(false);
@@ -62,6 +70,7 @@ export function LocationAutocomplete({
   }, []);
 
   const select = (loc: ResolvedLocation) => {
+    justSelectedRef.current = loc.name;
     onSelect(loc);
     setOpen(false);
   };

@@ -3,6 +3,8 @@ import { AlertTriangle, Info, RefreshCw, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
+import { Card } from '../components/ui/Card';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { WeatherAlert } from '../types';
 
 export function Alerts() {
@@ -70,19 +72,16 @@ export function Alerts() {
       {(status === 'idle' || status === 'loading') && (
         <div className="space-y-4">
           {[1, 2].map(i => (
-            <div
-              key={i}
-              className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-pulse"
-            >
+            <Card key={i}>
               <div className="flex justify-between mb-4">
-                <div className="w-20 h-5 bg-[var(--border)] rounded" />
-                <div className="w-16 h-4 bg-[var(--border)] rounded" />
+                <LoadingSkeleton className="w-20 h-5" />
+                <LoadingSkeleton className="w-16 h-4" />
               </div>
               <div className="space-y-2">
-                <div className="w-full h-4 bg-[var(--border)] rounded" />
-                <div className="w-3/4 h-4 bg-[var(--border)] rounded" />
+                <LoadingSkeleton className="w-full h-4" />
+                <LoadingSkeleton className="w-3/4 h-4" />
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
