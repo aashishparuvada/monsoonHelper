@@ -1,0 +1,6 @@
+{
+  "name": "Monsoon Ready",
+  "description": "A GenAI-powered monsoon preparedness and citizen assistance app.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
