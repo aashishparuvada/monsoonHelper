@@ -1,11 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
+import { api } from '../api';
 import { Message } from '../types';
 
 export function Assistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const suggestedPrompts = [
@@ -23,23 +25,24 @@ export function Assistant() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (text: string) => {
-    if (!text.trim()) return;
-    
-    const newMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
-    setMessages(prev => [...prev, newMsg]);
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isTyping) return;
+
+    const newMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text };
+    const history = [...messages, newMsg];
+    setMessages(history);
     setInput('');
+    setError(null);
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const res = await api.chat(history.map(m => ({ role: m.role, content: m.content })));
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: res.text }]);
+    } catch {
+      setError('Could not reach the assistant. Please try again.');
+    } finally {
       setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "Based on current advisories, I recommend keeping your emergency kit near the door. Make sure to include a flashlight, extra batteries, a first aid kit, and bottled water. Would you like a detailed checklist?"
-      }]);
-    }, 2000);
+    }
   };
 
   return (
@@ -56,7 +59,7 @@ export function Assistant() {
             </div>
             <h2 className="font-medium mb-2">How can I help you prepare?</h2>
             <p className="text-sm text-[var(--text-secondary)] mb-8">
-              Ask me anything about weather safety, emergency kits, or local advisories.
+              Ask me anything about weather safety, emergency kits, or local advisories — in any language.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {suggestedPrompts.map(prompt => (
@@ -73,22 +76,22 @@ export function Assistant() {
         ) : (
           <>
             {messages.map(msg => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
+                <div
                   className={`max-w-[85%] sm:max-w-[75%] rounded-[20px] px-4 py-3 ${
-                    msg.role === 'user' 
-                      ? 'bg-[var(--text-primary)] text-[var(--bg)] rounded-tr-sm' 
+                    msg.role === 'user'
+                      ? 'bg-[var(--text-primary)] text-[var(--bg)] rounded-tr-sm'
                       : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-tl-sm'
                   }`}
                 >
-                  <p className="text-[15px] leading-relaxed">{msg.content}</p>
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             ))}
-            
+
             {isTyping && (
               <div className="flex justify-start">
                 <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] rounded-tl-sm px-4 py-3.5 flex gap-1 items-center">
@@ -98,13 +101,21 @@ export function Assistant() {
                 </div>
               </div>
             )}
+
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-[var(--color-status-red)]/10 border border-[var(--color-status-red)]/30 text-[var(--color-status-red)] rounded-2xl px-4 py-3 text-sm">
+                  {error}
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
       <div className="p-4 bg-[var(--bg)] border-t border-[var(--border)] shrink-0 pb-[max(env(safe-area-inset-bottom),1rem)]">
-        <form 
+        <form
           onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
           className="relative flex items-center"
         >
@@ -115,16 +126,17 @@ export function Assistant() {
             placeholder="Type a message..."
             className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-full pl-5 pr-12 py-3.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
           />
-          <button 
+          <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isTyping}
+            aria-label="Send message"
             className="absolute right-2 p-2 bg-[var(--text-primary)] text-[var(--bg)] rounded-full disabled:opacity-50 disabled:bg-[var(--surface)] disabled:text-[var(--text-secondary)] transition-colors"
           >
             <Send className="w-4 h-4" />
           </button>
         </form>
         <p className="text-[10px] text-[var(--text-secondary)] text-center mt-2 font-medium tracking-wide">
-          AUTO-DETECTS LANGUAGE
+          RESPONDS IN WHATEVER LANGUAGE YOU WRITE IN
         </p>
       </div>
     </div>

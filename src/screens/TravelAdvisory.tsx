@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Map, Navigation, Search } from 'lucide-react';
 import { api } from '../api';
+import { LiveWeather } from '../types';
 
 export function TravelAdvisory() {
   const [destination, setDestination] = useState('');
   const [advisory, setAdvisory] = useState<string | null>(null);
+  const [weather, setWeather] = useState<LiveWeather | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const checkSafety = async (e: React.FormEvent) => {
+  const checkSafety = async (e: FormEvent) => {
     e.preventDefault();
     if (!destination.trim()) return;
 
@@ -15,8 +19,10 @@ export function TravelAdvisory() {
     try {
       const res = await api.getTravelAdvisory(destination);
       setAdvisory(res.advisory);
+      setWeather(res.weather);
       setStatus('success');
     } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to generate advisory.');
       setStatus('error');
     }
   };
@@ -75,8 +81,8 @@ export function TravelAdvisory() {
       )}
 
       {status === 'error' && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-center text-red-500">
-          <p className="text-sm font-medium">Failed to generate advisory. Please try again.</p>
+        <div className="p-4 bg-[var(--color-status-red)]/10 border border-[var(--color-status-red)]/20 rounded-2xl text-center text-[var(--color-status-red)]">
+          <p className="text-sm font-medium">{errorMessage ?? 'Failed to generate advisory. Please try again.'}</p>
         </div>
       )}
 
@@ -86,12 +92,15 @@ export function TravelAdvisory() {
             <div className="w-10 h-10 rounded-full bg-[var(--color-brand)]/10 flex items-center justify-center text-[var(--color-brand)]">
               <Navigation className="w-5 h-5" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-wider">Advisory For</p>
-              <h3 className="font-semibold text-[15px]">{destination}</h3>
+              <h3 className="font-semibold text-[15px]">{weather?.resolvedLocation ?? destination}</h3>
             </div>
+            {weather && (
+              <span className="text-lg font-bold tracking-tighter shrink-0">{Math.round(weather.temperatureC)}°C</span>
+            )}
           </div>
-          
+
           <p className="text-[15px] leading-relaxed">
             {advisory}
           </p>

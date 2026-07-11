@@ -30,11 +30,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // index.css defines OLED black as the :root default and light mode as
+    // a `.light` override, so toggling is "add/remove .light", not .dark.
+    document.documentElement.classList.toggle('light', theme === 'light');
     localStorage.setItem('theme', theme);
   }, [theme]);
 

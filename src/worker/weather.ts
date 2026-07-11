@@ -1,17 +1,4 @@
-import type { Severity } from '../types';
-
-export interface LiveWeather {
-  resolvedLocation: string;
-  latitude: number;
-  longitude: number;
-  temperatureC: number;
-  precipitationMm: number;
-  windSpeedKmh: number;
-  weatherCode: number;
-  condition: string;
-  severity: Severity;
-  precipitationProbabilityNext6h: number;
-}
+import type { LiveWeather, Severity } from '../types';
 
 const WEATHER_CODE_LABELS: Record<number, string> = {
   0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',

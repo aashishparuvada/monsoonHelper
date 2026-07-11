@@ -17,6 +17,19 @@ export interface WeatherAlert {
   area: string;
 }
 
+export interface LiveWeather {
+  resolvedLocation: string;
+  latitude: number;
+  longitude: number;
+  temperatureC: number;
+  precipitationMm: number;
+  windSpeedKmh: number;
+  weatherCode: number;
+  condition: string;
+  severity: Severity;
+  precipitationProbabilityNext6h: number;
+}
+
 export interface PlanItem {
   id: string;
   task: string;

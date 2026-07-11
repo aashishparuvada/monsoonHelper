@@ -1,34 +1,31 @@
-import { useState, useEffect } from 'react';
-import { AlertTriangle, Info, ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, Info, RefreshCw, ShieldAlert } from 'lucide-react';
+import { api } from '../api';
+import { DEFAULT_PROFILE, getProfile } from '../lib/profile';
 import { WeatherAlert } from '../types';
 
-export function Alerts() {
-  const [alerts, setAlerts] = useState<WeatherAlert[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type Status = 'loading' | 'success' | 'error';
 
-  // Mock fetching real-time alerts
+export function Alerts() {
+  const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
+  const [status, setStatus] = useState<Status>('loading');
+
+  const location = (getProfile() ?? DEFAULT_PROFILE).location || DEFAULT_PROFILE.location;
+
+  const fetchAlerts = async () => {
+    setStatus('loading');
+    try {
+      const res = await api.getAlerts(location);
+      setAlerts(res.alerts);
+      setStatus('success');
+    } catch {
+      setStatus('error');
+    }
+  };
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Empty state for demo: setAlerts([])
-      setAlerts([
-        {
-          id: '1',
-          severity: 'severe',
-          timestamp: '10 mins ago',
-          summary: 'Heavy rainfall expected in the next 2 hours. Localized flooding possible in low-lying areas.',
-          area: 'South Mumbai'
-        },
-        {
-          id: '2',
-          severity: 'caution',
-          timestamp: '1 hour ago',
-          summary: 'Moderate waterlogging on main arterial roads. Expect traffic delays.',
-          area: 'Andheri East'
-        }
-      ]);
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    fetchAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getIcon = (severity: string) => {
@@ -49,12 +46,22 @@ export function Alerts() {
 
   return (
     <div className="p-4 pb-20 space-y-4">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-1">Active Alerts</h2>
-        <p className="text-sm text-[var(--text-secondary)]">Real-time weather updates</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">Active Alerts</h2>
+          <p className="text-sm text-[var(--text-secondary)]">Real-time weather updates for {location}</p>
+        </div>
+        <button
+          onClick={fetchAlerts}
+          disabled={status === 'loading'}
+          aria-label="Refresh alerts"
+          className="p-2 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg)] transition-colors disabled:opacity-50 shrink-0"
+        >
+          <RefreshCw className={`w-4 h-4 ${status === 'loading' ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {isLoading && (
+      {status === 'loading' && (
         <div className="space-y-4">
           {[1, 2].map(i => (
             <div key={i} className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-pulse">
@@ -71,7 +78,19 @@ export function Alerts() {
         </div>
       )}
 
-      {!isLoading && alerts?.length === 0 && (
+      {status === 'error' && (
+        <div className="text-center py-16 flex flex-col items-center">
+          <p className="text-[var(--text-secondary)] text-sm mb-4">Could not load alerts for {location}.</p>
+          <button
+            onClick={fetchAlerts}
+            className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {status === 'success' && alerts.length === 0 && (
         <div className="text-center py-20 flex flex-col items-center">
           <div className="w-16 h-16 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center mb-4">
             <Info className="w-8 h-8 text-[var(--text-secondary)]" />
@@ -81,8 +100,8 @@ export function Alerts() {
         </div>
       )}
 
-      {!isLoading && alerts && alerts.map(alert => (
-        <div 
+      {status === 'success' && alerts.map(alert => (
+        <div
           key={alert.id}
           className={`p-5 rounded-2xl border ${getColor(alert.severity)}`}
         >
@@ -91,13 +110,15 @@ export function Alerts() {
               {getIcon(alert.severity)}
               <span className="font-semibold text-sm capitalize">{alert.severity}</span>
             </div>
-            <span className="text-xs text-[var(--text-secondary)]">{alert.timestamp}</span>
+            <span className="text-xs text-[var(--text-secondary)]">
+              {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
-          
+
           <p className="text-[15px] leading-relaxed mb-4">
             {alert.summary}
           </p>
-          
+
           <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg)] w-max px-2.5 py-1 rounded-md border border-[var(--border)]">
             <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
             {alert.area}

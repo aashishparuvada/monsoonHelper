@@ -1,14 +1,16 @@
-import { User, MapPin, Globe, Shield, Moon, Sun } from 'lucide-react';
+import { MapPin, Globe, Shield, Moon, Sun } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { DEFAULT_PROFILE, clearProfile, getProfile } from '../lib/profile';
+import { clearPlan } from '../lib/plan';
 
 export function Settings() {
   const { theme, setTheme, setOnboardingComplete, navigate } = useAppContext();
-  
-  const profileStr = localStorage.getItem('userProfile');
-  const profile = profileStr ? JSON.parse(profileStr) : { name: 'User', location: 'Mumbai, India', language: 'English' };
+
+  const profile = getProfile() ?? DEFAULT_PROFILE;
 
   const handleReset = () => {
-    localStorage.removeItem('userProfile');
+    clearProfile();
+    clearPlan();
     setOnboardingComplete(false);
     navigate('onboarding');
   };

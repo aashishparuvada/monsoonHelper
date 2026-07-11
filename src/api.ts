@@ -1,40 +1,47 @@
-import { Phase, UserProfile } from './types';
+import { LiveWeather, Message, Phase, PlanItem, UserProfile, WeatherAlert } from './types';
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null) as { error?: string } | null;
+    throw new Error(data?.error ?? `Request to ${path} failed`);
+  }
+  return res.json();
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const res = await fetch(path);
+  if (!res.ok) {
+    const data = await res.json().catch(() => null) as { error?: string } | null;
+    throw new Error(data?.error ?? `Request to ${path} failed`);
+  }
+  return res.json();
+}
 
 export const api = {
-  async getSummary(location: string, phase: Phase) {
-    const res = await fetch('/api/summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ location, phase })
-    });
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
+  getWeather(location: string) {
+    return getJson<{ weather: LiveWeather }>(`/api/weather?location=${encodeURIComponent(location)}`);
   },
-  async getPlan(profile: UserProfile) {
-    const res = await fetch('/api/plan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile })
-    });
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
+  getSummary(location: string, phase: Phase) {
+    return postJson<{ summary: string; weather: LiveWeather }>('/api/summary', { location, phase });
   },
-  async chat(messages: any[]) {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages })
-    });
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
+  getPlan(profile: UserProfile) {
+    return postJson<{ plan: PlanItem[] }>('/api/plan', { profile });
   },
-  async getTravelAdvisory(destination: string) {
-    const res = await fetch('/api/travel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ destination })
-    });
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
-  }
+  chat(messages: Pick<Message, 'role' | 'content'>[]) {
+    return postJson<{ text: string }>('/api/chat', { messages });
+  },
+  getAlerts(location: string) {
+    return getJson<{ alerts: WeatherAlert[] }>(`/api/alerts?location=${encodeURIComponent(location)}`);
+  },
+  getTravelAdvisory(destination: string) {
+    return postJson<{ advisory: string; weather: LiveWeather }>('/api/travel', { destination });
+  },
+  reverseGeocode(lat: number, lon: number) {
+    return getJson<{ location: string }>(`/api/geocode/reverse?lat=${lat}&lon=${lon}`);
+  },
 };

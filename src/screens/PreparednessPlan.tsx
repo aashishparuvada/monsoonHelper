@@ -1,33 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshCw, CheckCircle2, Circle } from 'lucide-react';
 import { api } from '../api';
+import { Chip } from '../components/ui/Chip';
+import { getProfile, DEFAULT_PROFILE } from '../lib/profile';
+import { getStoredPlan, savePlan } from '../lib/plan';
 import { PlanItem, Phase } from '../types';
+
+type Status = 'loading' | 'success' | 'error';
 
 export function PreparednessPlan() {
   const [items, setItems] = useState<PlanItem[]>([]);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<Status>('loading');
   const [activePhase, setActivePhase] = useState<Phase>('Before');
 
-  const fetchPlan = async () => {
+  const generatePlan = async () => {
     setStatus('loading');
     try {
-      const profileStr = localStorage.getItem('userProfile');
-      const profile = profileStr ? JSON.parse(profileStr) : { location: 'Mumbai', context: ['Adults'] };
-      
+      const profile = getProfile() ?? DEFAULT_PROFILE;
       const res = await api.getPlan(profile);
       setItems(res.plan);
+      savePlan(res.plan);
       setStatus('success');
-    } catch (err) {
+    } catch {
       setStatus('error');
     }
   };
 
   useEffect(() => {
-    fetchPlan();
+    const stored = getStoredPlan();
+    if (stored && stored.length > 0) {
+      setItems(stored);
+      setStatus('success');
+    } else {
+      generatePlan();
+    }
   }, []);
 
   const toggleItem = (id: string) => {
-    setItems(items.map(item => item.id === id ? { ...item, completed: !item.completed } : item));
+    const next = items.map(item => (item.id === id ? { ...item, completed: !item.completed } : item));
+    setItems(next);
+    savePlan(next);
   };
 
   const filteredItems = items.filter(i => i.phase === activePhase);
@@ -41,9 +53,10 @@ export function PreparednessPlan() {
           <h2 className="text-2xl font-bold mb-1">My Plan</h2>
           <p className="text-sm text-[var(--text-secondary)]">Personalized checklist</p>
         </div>
-        <button 
-          onClick={fetchPlan} 
+        <button
+          onClick={generatePlan}
           disabled={status === 'loading'}
+          aria-label="Regenerate plan"
           className="p-2 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--bg)] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${status === 'loading' ? 'animate-spin' : ''}`} />
@@ -56,26 +69,16 @@ export function PreparednessPlan() {
           <span className="text-sm font-medium">{completedCount} of {items.length}</span>
         </div>
         <div className="h-2 w-full bg-[var(--border)] rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-[var(--color-brand)] transition-all duration-500 ease-out" 
-            style={{ width: `${progress}%` }} 
+          <div
+            className="h-full bg-brand transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {(['Before', 'During', 'After'] as Phase[]).map(p => (
-          <button
-            key={p}
-            onClick={() => setActivePhase(p)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
-              activePhase === p 
-                ? 'bg-[var(--text-primary)] text-[var(--bg)] border-[var(--text-primary)]' 
-                : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)]'
-            }`}
-          >
-            {p} Phase
-          </button>
+          <Chip key={p} label={`${p} Phase`} active={activePhase === p} onClick={() => setActivePhase(p)} />
         ))}
       </div>
 
@@ -95,8 +98,8 @@ export function PreparednessPlan() {
         {status === 'error' && (
           <div className="text-center py-10">
             <p className="text-[var(--text-secondary)] mb-4">Could not generate plan.</p>
-            <button 
-              onClick={fetchPlan}
+            <button
+              onClick={generatePlan}
               className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm font-medium"
             >
               Try Again
@@ -115,12 +118,12 @@ export function PreparednessPlan() {
             key={item.id}
             onClick={() => toggleItem(item.id)}
             className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${
-              item.completed 
-                ? 'bg-[var(--bg)] border-[var(--border)] opacity-60' 
+              item.completed
+                ? 'bg-[var(--bg)] border-[var(--border)] opacity-60'
                 : 'bg-[var(--surface)] border-[var(--border)]'
             }`}
           >
-            <div className="mt-0.5 text-[var(--color-brand)]">
+            <div className="mt-0.5 text-brand">
               {item.completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5 text-[var(--text-secondary)]" />}
             </div>
             <span className={`text-[15px] leading-relaxed ${item.completed ? 'line-through text-[var(--text-secondary)]' : ''}`}>

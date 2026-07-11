@@ -1,5 +1,11 @@
 import { useState } from 'react';
+import { LocateFixed } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { api } from '../api';
+import { DEFAULT_PROFILE, saveProfile } from '../lib/profile';
+import { Button } from '../components/ui/Button';
+import { Chip } from '../components/ui/Chip';
+import { Input } from '../components/ui/Input';
 
 export function Onboarding() {
   const { setOnboardingComplete, navigate } = useAppContext();
@@ -8,6 +14,8 @@ export function Onboarding() {
   const [location, setLocation] = useState('');
   const [context, setContext] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
 
   const contextOptions = ['Adults', 'Children', 'Elderly', 'Pets', 'Medical Needs'];
 
@@ -15,9 +23,41 @@ export function Onboarding() {
     setContext(prev => prev.includes(opt) ? prev.filter(c => c !== opt) : [...prev, opt]);
   };
 
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocateError('Geolocation is not supported on this device.');
+      return;
+    }
+    setLocating(true);
+    setLocateError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { location: resolved } = await api.reverseGeocode(
+            position.coords.latitude,
+            position.coords.longitude,
+          );
+          setLocation(resolved);
+        } catch {
+          setLocateError('Could not resolve your location. Please type it in.');
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLocateError('Location access was denied. Please type it in instead.');
+        setLocating(false);
+      },
+    );
+  };
+
   const finish = () => {
-    // In a real app, save this to context/localStorage
-    localStorage.setItem('userProfile', JSON.stringify({ name, location, context, language }));
+    saveProfile({
+      name: name.trim() || DEFAULT_PROFILE.name,
+      location: location.trim() || DEFAULT_PROFILE.location,
+      context,
+      language,
+    });
     setOnboardingComplete(true);
     navigate('home');
   };
@@ -44,16 +84,12 @@ export function Onboarding() {
               Your calm, GenAI-powered assistant for monsoon preparedness and safety. Let's personalize your experience.
             </p>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">What should we call you?</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={e => setName(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 focus:outline-none focus:border-[var(--color-brand)] transition-colors"
-                  placeholder="Your name"
-                />
-              </div>
+              <Input
+                label="What should we call you?"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your name"
+              />
             </div>
           </div>
         )}
@@ -65,19 +101,24 @@ export function Onboarding() {
               We use your location to provide relevant weather alerts and travel advisories.
             </p>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">City or region</label>
-                <input 
-                  type="text" 
-                  value={location} 
-                  onChange={e => setLocation(e.target.value)}
-                  className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 focus:outline-none focus:border-[var(--color-brand)] transition-colors"
-                  placeholder="e.g. Mumbai, Maharashtra"
-                />
-              </div>
-              <button className="w-full py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--surface)] transition-colors">
-                Use my current location
+              <Input
+                label="City or region"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="e.g. Mumbai, Maharashtra"
+              />
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="w-full py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--surface)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <LocateFixed className={`w-4 h-4 ${locating ? 'animate-pulse' : ''}`} />
+                {locating ? 'Locating…' : 'Use my current location'}
               </button>
+              {locateError && (
+                <p className="text-xs text-[var(--color-status-red)]">{locateError}</p>
+              )}
             </div>
           </div>
         )}
@@ -90,41 +131,33 @@ export function Onboarding() {
             </p>
             <div className="flex flex-wrap gap-2 mb-8">
               {contextOptions.map(opt => (
-                <button 
+                <Chip
                   key={opt}
+                  label={opt}
+                  active={context.includes(opt)}
                   onClick={() => toggleContext(opt)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                    context.includes(opt) 
-                      ? 'bg-[var(--color-brand)] text-white border-[var(--color-brand)]' 
-                      : 'border-[var(--border)] hover:bg-[var(--surface)] text-[var(--text-primary)]'
-                  }`}
-                >
-                  {opt}
-                </button>
+                />
               ))}
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">Preferred Language</label>
-              <input 
-                type="text" 
-                value={language} 
-                onChange={e => setLanguage(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 focus:outline-none focus:border-[var(--color-brand)] transition-colors"
-                placeholder="e.g. English, Hindi, Marathi"
-              />
-            </div>
+
+            <Input
+              label="Preferred Language"
+              value={language}
+              onChange={e => setLanguage(e.target.value)}
+              placeholder="e.g. English, Hindi, Marathi"
+            />
           </div>
         )}
       </div>
 
       <div className="mt-auto pt-6">
-        <button 
+        <Button
+          fullWidth
           onClick={() => step < 3 ? setStep(step + 1) : finish()}
-          className="w-full bg-[var(--text-primary)] text-[var(--bg)] py-4 rounded-xl font-medium text-lg hover:opacity-90 transition-opacity"
+          className="py-4 text-lg"
         >
           {step === 3 ? 'Get Started' : 'Continue'}
-        </button>
+        </Button>
       </div>
     </div>
   );
