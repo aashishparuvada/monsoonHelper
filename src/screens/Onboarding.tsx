@@ -23,7 +23,7 @@ export function Onboarding() {
   const contextOptions = ['Adults', 'Children', 'Elderly', 'Pets', 'Medical Needs'];
 
   const toggleContext = (opt: string) => {
-    setContext(prev => prev.includes(opt) ? prev.filter(c => c !== opt) : [...prev, opt]);
+    setContext(prev => (prev.includes(opt) ? prev.filter(c => c !== opt) : [...prev, opt]));
   };
 
   const handleLocationInputChange = (text: string) => {
@@ -39,7 +39,7 @@ export function Onboarding() {
     setLocating(true);
     setLocateError(null);
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      async position => {
         try {
           const { latitude, longitude } = position.coords;
           const { location: resolved } = await api.reverseGeocode(latitude, longitude);
@@ -92,14 +92,21 @@ export function Onboarding() {
               />
             ))}
           </div>
-          <button type="button" onClick={finish} className="text-sm font-medium text-[var(--text-secondary)]">Skip</button>
+          <button
+            type="button"
+            onClick={finish}
+            className="text-sm font-medium text-[var(--text-secondary)]"
+          >
+            Skip
+          </button>
         </div>
 
         {step === 1 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h1 className="text-3xl font-bold mb-4">Welcome to Monsoon Ready</h1>
             <p className="text-[var(--text-secondary)] mb-8 leading-relaxed">
-              Your calm, GenAI-powered assistant for monsoon preparedness and safety. Let's personalize your experience.
+              Your calm, GenAI-powered assistant for monsoon preparedness and safety. Let's
+              personalize your experience.
             </p>
             <div className="space-y-4">
               <Input
@@ -124,7 +131,10 @@ export function Onboarding() {
                 label="City or region"
                 value={location}
                 onInputChange={handleLocationInputChange}
-                onSelect={loc => { setLocation(loc.name); setCoords({ latitude: loc.latitude, longitude: loc.longitude }); }}
+                onSelect={loc => {
+                  setLocation(loc.name);
+                  setCoords({ latitude: loc.latitude, longitude: loc.longitude });
+                }}
                 placeholder="Start typing a city…"
               />
               <button

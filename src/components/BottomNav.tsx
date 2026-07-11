@@ -16,15 +16,15 @@ export function BottomNav() {
   return (
     <nav className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--surface)] px-2 py-2 pb-safe">
       <ul className="flex items-center justify-around w-full max-w-2xl mx-auto">
-        {tabs.map((tab) => {
+        {tabs.map(tab => {
           const isActive = currentScreen === tab.id;
           return (
             <li key={tab.id} className="flex-1">
               <button
                 onClick={() => navigate(tab.id)}
                 className={`w-full flex flex-col items-center justify-center p-2 rounded-xl transition-all ${
-                  isActive 
-                    ? 'text-[var(--color-brand)]' 
+                  isActive
+                    ? 'text-[var(--color-brand)]'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg)]'
                 }`}
                 aria-label={tab.label}

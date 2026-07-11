@@ -28,10 +28,12 @@ async function withRetry<T>(call: () => Promise<T>): Promise<T> {
 
 export async function generateText(apiKey: string, prompt: string): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
-  const response = await withRetry(() => ai.models.generateContent({
-    model: MODEL,
-    contents: prompt,
-  }));
+  const response = await withRetry(() =>
+    ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    }),
+  );
   return response.text ?? '';
 }
 
@@ -51,17 +53,22 @@ export async function generateChatReply(
     parts: [{ text: m.content }],
   }));
 
-  const response = await withRetry(() => ai.models.generateContent({
-    model: MODEL,
-    config: { systemInstruction },
-    contents,
-  }));
+  const response = await withRetry(() =>
+    ai.models.generateContent({
+      model: MODEL,
+      config: { systemInstruction },
+      contents,
+    }),
+  );
   return response.text ?? '';
 }
 
 // Gemini sometimes wraps JSON output in markdown code fences despite
 // instructions not to; strip them before parsing.
 export function parseJsonResponse<T>(raw: string): T {
-  const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const cleaned = raw
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
   return JSON.parse(cleaned) as T;
 }

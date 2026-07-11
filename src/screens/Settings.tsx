@@ -40,28 +40,34 @@ export function Settings() {
             </div>
             <span className="text-sm text-[var(--text-secondary)]">{profile.location}</span>
           </div>
-          
+
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Globe className="w-5 h-5 text-[var(--text-secondary)]" />
               <span className="text-[15px] font-medium">Language</span>
             </div>
-            <span className="text-sm text-[var(--text-secondary)]">{profile.language || 'Auto-detect'}</span>
+            <span className="text-sm text-[var(--text-secondary)]">
+              {profile.language || 'Auto-detect'}
+            </span>
           </div>
 
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {theme === 'dark' ? <Moon className="w-5 h-5 text-[var(--text-secondary)]" /> : <Sun className="w-5 h-5 text-[var(--text-secondary)]" />}
+              {theme === 'dark' ? (
+                <Moon className="w-5 h-5 text-[var(--text-secondary)]" />
+              ) : (
+                <Sun className="w-5 h-5 text-[var(--text-secondary)]" />
+              )}
               <span className="text-[15px] font-medium">Appearance</span>
             </div>
             <div className="flex items-center gap-2 bg-[var(--bg)] p-1 rounded-full border border-[var(--border)]">
-              <button 
+              <button
                 onClick={() => setTheme('light')}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${theme === 'light' ? 'bg-[var(--text-primary)] text-[var(--bg)]' : 'text-[var(--text-secondary)]'}`}
               >
                 Light
               </button>
-              <button 
+              <button
                 onClick={() => setTheme('dark')}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${theme === 'dark' ? 'bg-[var(--text-primary)] text-[var(--bg)]' : 'text-[var(--text-secondary)]'}`}
               >
@@ -77,12 +83,13 @@ export function Settings() {
         <div>
           <h4 className="text-[15px] font-medium mb-1">Privacy & Data</h4>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Your profile and context are stored locally on your device. We don't require an account to use Monsoon Ready.
+            Your profile and context are stored locally on your device. We don't require an account
+            to use Monsoon Ready.
           </p>
         </div>
       </div>
 
-      <button 
+      <button
         onClick={handleReset}
         className="w-full py-4 text-sm font-medium text-[var(--color-status-red)] bg-[var(--color-status-red)]/10 rounded-2xl hover:bg-[var(--color-status-red)]/20 transition-colors"
       >

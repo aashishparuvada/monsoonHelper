@@ -1,4 +1,13 @@
-import { LiveWeather, LocationRef, Message, Phase, PlanItem, ResolvedLocation, UserProfile, WeatherAlert } from './types';
+import {
+  LiveWeather,
+  LocationRef,
+  Message,
+  Phase,
+  PlanItem,
+  ResolvedLocation,
+  UserProfile,
+  WeatherAlert,
+} from './types';
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -7,7 +16,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const data = await res.json().catch(() => null) as { error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
     throw new Error(data?.error ?? `Request to ${path} failed`);
   }
   return res.json();
@@ -16,7 +25,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(path);
   if (!res.ok) {
-    const data = await res.json().catch(() => null) as { error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
     throw new Error(data?.error ?? `Request to ${path} failed`);
   }
   return res.json();
@@ -33,7 +42,9 @@ function locationQuery(location: LocationRef): string {
 
 export const api = {
   searchLocations(query: string) {
-    return getJson<{ results: ResolvedLocation[] }>(`/api/geocode/search?q=${encodeURIComponent(query)}`);
+    return getJson<{ results: ResolvedLocation[] }>(
+      `/api/geocode/search?q=${encodeURIComponent(query)}`,
+    );
   },
   getWeather(location: LocationRef) {
     return getJson<{ weather: LiveWeather }>(`/api/weather?${locationQuery(location)}`);

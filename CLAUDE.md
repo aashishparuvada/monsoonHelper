@@ -83,7 +83,7 @@ of these three phases rather than becoming a fourth top-level concept.
 ## Code quality conventions
 
 - TypeScript strict; no `any` where a real type is knowable.
-- No comments explaining *what* code does — only *why*, for non-obvious
+- No comments explaining _what_ code does — only _why_, for non-obvious
   constraints (e.g. a Gemini prompt-format quirk, a Workers runtime
   limitation).
 - Don't add abstractions, config flags, or error handling for cases that
@@ -91,6 +91,11 @@ of these three phases rather than becoming a fourth top-level concept.
   everything past that.
 - Keep components presentational where possible; data fetching lives in
   small hooks/`api.ts`, not scattered `fetch` calls inside JSX.
+- Repeated async loading/success/error state across screens belongs in the
+  shared `useAsyncData` hook (`src/hooks/useAsyncData.ts`), not copy-pasted
+  per screen.
+- `npm run check` (typecheck + `eslint .` + `prettier --check .`) must pass
+  before committing — it's what the pre-commit hook runs.
 
 ## Git workflow
 
@@ -98,5 +103,5 @@ of these three phases rather than becoming a fourth top-level concept.
   commit at the end) — history should read as genuine incremental
   development.
 - A local pre-commit hook (`.git/hooks/pre-commit`, not tracked by git)
-  blocks commits that stage `.env`/`.dev.vars` and runs `tsc --noEmit`.
+  blocks commits that stage `.env`/`.dev.vars` and runs `npm run check`.
   Don't bypass it with `--no-verify`.

@@ -40,7 +40,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const navigate = (screen: Screen) => setCurrentScreen(screen);
 
   return (
-    <AppContext.Provider value={{ theme, setTheme, currentScreen, navigate, onboardingComplete, setOnboardingComplete }}>
+    <AppContext.Provider
+      value={{
+        theme,
+        setTheme,
+        currentScreen,
+        navigate,
+        onboardingComplete,
+        setOnboardingComplete,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

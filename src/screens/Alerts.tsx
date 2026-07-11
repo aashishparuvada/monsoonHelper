@@ -32,17 +32,23 @@ export function Alerts() {
 
   const getIcon = (severity: string) => {
     switch (severity) {
-      case 'severe': return <ShieldAlert className="w-5 h-5 text-[var(--color-status-red)]" />;
-      case 'caution': return <AlertTriangle className="w-5 h-5 text-[var(--color-status-amber)]" />;
-      default: return <Info className="w-5 h-5 text-[var(--color-status-green)]" />;
+      case 'severe':
+        return <ShieldAlert className="w-5 h-5 text-[var(--color-status-red)]" />;
+      case 'caution':
+        return <AlertTriangle className="w-5 h-5 text-[var(--color-status-amber)]" />;
+      default:
+        return <Info className="w-5 h-5 text-[var(--color-status-green)]" />;
     }
   };
 
   const getColor = (severity: string) => {
     switch (severity) {
-      case 'severe': return 'border-[var(--color-status-red)]/30 bg-[var(--color-status-red)]/5';
-      case 'caution': return 'border-[var(--color-status-amber)]/30 bg-[var(--color-status-amber)]/5';
-      default: return 'border-[var(--color-status-green)]/30 bg-[var(--color-status-green)]/5';
+      case 'severe':
+        return 'border-[var(--color-status-red)]/30 bg-[var(--color-status-red)]/5';
+      case 'caution':
+        return 'border-[var(--color-status-amber)]/30 bg-[var(--color-status-amber)]/5';
+      default:
+        return 'border-[var(--color-status-green)]/30 bg-[var(--color-status-green)]/5';
     }
   };
 
@@ -51,7 +57,9 @@ export function Alerts() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-bold mb-1">Active Alerts</h2>
-          <p className="text-sm text-[var(--text-secondary)]">Real-time weather updates for {location}</p>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Real-time weather updates for {location}
+          </p>
         </div>
         <button
           onClick={fetchAlerts}
@@ -66,7 +74,10 @@ export function Alerts() {
       {status === 'loading' && (
         <div className="space-y-4">
           {[1, 2].map(i => (
-            <div key={i} className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-pulse">
+            <div
+              key={i}
+              className="bg-[var(--surface)] p-5 rounded-2xl border border-[var(--border)] animate-pulse"
+            >
               <div className="flex justify-between mb-4">
                 <div className="w-20 h-5 bg-[var(--border)] rounded" />
                 <div className="w-16 h-4 bg-[var(--border)] rounded" />
@@ -82,7 +93,9 @@ export function Alerts() {
 
       {status === 'error' && (
         <div className="text-center py-16 flex flex-col items-center">
-          <p className="text-[var(--text-secondary)] text-sm mb-4">Could not load alerts for {location}.</p>
+          <p className="text-[var(--text-secondary)] text-sm mb-4">
+            Could not load alerts for {location}.
+          </p>
           <button
             onClick={fetchAlerts}
             className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-sm font-medium"
@@ -98,35 +111,36 @@ export function Alerts() {
             <Info className="w-8 h-8 text-[var(--text-secondary)]" />
           </div>
           <h3 className="font-semibold text-lg mb-1">No active alerts</h3>
-          <p className="text-[var(--text-secondary)] text-sm">Conditions are currently normal in your area.</p>
+          <p className="text-[var(--text-secondary)] text-sm">
+            Conditions are currently normal in your area.
+          </p>
         </div>
       )}
 
-      {status === 'success' && alerts.map(alert => (
-        <div
-          key={alert.id}
-          className={`p-5 rounded-2xl border ${getColor(alert.severity)}`}
-        >
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex items-center gap-2">
-              {getIcon(alert.severity)}
-              <span className="font-semibold text-sm capitalize">{alert.severity}</span>
+      {status === 'success' &&
+        alerts.map(alert => (
+          <div key={alert.id} className={`p-5 rounded-2xl border ${getColor(alert.severity)}`}>
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-2">
+                {getIcon(alert.severity)}
+                <span className="font-semibold text-sm capitalize">{alert.severity}</span>
+              </div>
+              <span className="text-xs text-[var(--text-secondary)]">
+                {new Date(alert.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
             </div>
-            <span className="text-xs text-[var(--text-secondary)]">
-              {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
 
-          <p className="text-[15px] leading-relaxed mb-4">
-            {alert.summary}
-          </p>
+            <p className="text-[15px] leading-relaxed mb-4">{alert.summary}</p>
 
-          <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg)] w-max px-2.5 py-1 rounded-md border border-[var(--border)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
-            {alert.area}
+            <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg)] w-max px-2.5 py-1 rounded-md border border-[var(--border)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+              {alert.area}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 }

@@ -15,7 +15,13 @@ interface LocationAutocompleteProps {
 // A typed-and-picked location can never fail to resolve downstream (unlike
 // a free-typed city name), so this is the only way locations get set
 // wherever "no failure at city name" matters — Onboarding and Travel Advisory.
-export function LocationAutocomplete({ label, placeholder, value, onInputChange, onSelect }: LocationAutocompleteProps) {
+export function LocationAutocomplete({
+  label,
+  placeholder,
+  value,
+  onInputChange,
+  onSelect,
+}: LocationAutocompleteProps) {
   const [results, setResults] = useState<ResolvedLocation[]>([]);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
@@ -39,7 +45,10 @@ export function LocationAutocomplete({ label, placeholder, value, onInputChange,
         if (!cancelled) setResults([]);
       }
     }, 300);
-    return () => { cancelled = true; clearTimeout(timer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [value]);
 
   useEffect(() => {
@@ -101,7 +110,9 @@ export function LocationAutocomplete({ label, placeholder, value, onInputChange,
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => select(loc)}
                 className={`w-full text-left px-4 py-2.5 flex items-center gap-2 text-sm transition-colors ${
-                  i === highlighted ? 'bg-[var(--bg)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg)]'
+                  i === highlighted
+                    ? 'bg-[var(--bg)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg)]'
                 }`}
               >
                 <MapPin className="w-4 h-4 shrink-0" />

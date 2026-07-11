@@ -41,7 +41,8 @@ export function Home() {
   }, [phase]);
 
   useEffect(() => {
-    api.getAlerts(locationRef)
+    api
+      .getAlerts(locationRef)
       .then(res => setAlertCount(res.alerts.length))
       .catch(() => setAlertCount(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,9 +67,15 @@ export function Home() {
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-2 text-[var(--color-status-amber)]">
             <CloudRain className="w-5 h-5" />
-            <span className="font-semibold text-sm">{weather?.condition ?? 'Current conditions'}</span>
+            <span className="font-semibold text-sm">
+              {weather?.condition ?? 'Current conditions'}
+            </span>
           </div>
-          {weather && <span className="text-2xl font-bold tracking-tighter">{Math.round(weather.temperatureC)}°C</span>}
+          {weather && (
+            <span className="text-2xl font-bold tracking-tighter">
+              {Math.round(weather.temperatureC)}°C
+            </span>
+          )}
         </div>
 
         {status === 'loading' && (
@@ -81,7 +88,9 @@ export function Home() {
 
         {status === 'error' && (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-sm text-[var(--text-secondary)]">Failed to load risk summary for {profile.location}.</p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              Failed to load risk summary for {profile.location}.
+            </p>
             <button
               onClick={fetchSummary}
               className="flex items-center gap-2 text-sm font-medium text-brand bg-brand/10 px-3 py-1.5 rounded-full"
@@ -92,9 +101,7 @@ export function Home() {
         )}
 
         {status === 'success' && summary && (
-          <p className="text-[15px] leading-relaxed text-[var(--text-secondary)]">
-            {summary}
-          </p>
+          <p className="text-[15px] leading-relaxed text-[var(--text-secondary)]">{summary}</p>
         )}
       </div>
 
@@ -104,11 +111,14 @@ export function Home() {
           className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:bg-[var(--bg)] transition-colors group"
         >
           <div className="w-10 h-10 rounded-full bg-[var(--text-primary)] text-[var(--bg)] flex items-center justify-center mb-3">
-            <span className="font-bold text-sm">{planCompleted}/{planItems.length}</span>
+            <span className="font-bold text-sm">
+              {planCompleted}/{planItems.length}
+            </span>
           </div>
           <h3 className="font-semibold mb-1">Preparedness</h3>
           <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1 group-hover:text-[var(--text-primary)] transition-colors">
-            {planItems.length ? 'View checklist' : 'Generate a plan'} <ArrowRight className="w-3 h-3" />
+            {planItems.length ? 'View checklist' : 'Generate a plan'}{' '}
+            <ArrowRight className="w-3 h-3" />
           </p>
         </button>
 
@@ -121,7 +131,12 @@ export function Home() {
           </div>
           <h3 className="font-semibold mb-1">Active Alerts</h3>
           <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1 group-hover:text-[var(--text-primary)] transition-colors">
-            {alertCount === null ? 'Checking…' : alertCount === 0 ? 'All clear' : `${alertCount} active`} <ArrowRight className="w-3 h-3" />
+            {alertCount === null
+              ? 'Checking…'
+              : alertCount === 0
+                ? 'All clear'
+                : `${alertCount} active`}{' '}
+            <ArrowRight className="w-3 h-3" />
           </p>
         </button>
       </div>

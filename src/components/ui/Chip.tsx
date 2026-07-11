@@ -5,7 +5,13 @@ interface ChipProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
 }
 
-export function Chip({ active = false, label, className = '', type = 'button', ...props }: ChipProps) {
+export function Chip({
+  active = false,
+  label,
+  className = '',
+  type = 'button',
+  ...props
+}: ChipProps) {
   return (
     <button
       type={type}

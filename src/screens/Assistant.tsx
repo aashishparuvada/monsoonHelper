@@ -11,14 +11,14 @@ export function Assistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const suggestedPrompts = [
-    "What should I pack in an emergency kit?",
-    "Is it safe to travel to Andheri today?",
-    "How to handle a power cut safely?",
-    "Emergency contacts for my area."
+    'What should I pack in an emergency kit?',
+    'Is it safe to travel to Andheri today?',
+    'How to handle a power cut safely?',
+    'Emergency contacts for my area.',
   ];
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -37,7 +37,10 @@ export function Assistant() {
 
     try {
       const res = await api.chat(history.map(m => ({ role: m.role, content: m.content })));
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: res.text }]);
+      setMessages(prev => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'assistant', content: res.text },
+      ]);
     } catch {
       setError('Could not reach the assistant. Please try again.');
     } finally {
@@ -59,7 +62,8 @@ export function Assistant() {
             </div>
             <h2 className="font-medium mb-2">How can I help you prepare?</h2>
             <p className="text-sm text-[var(--text-secondary)] mb-8">
-              Ask me anything about weather safety, emergency kits, or local advisories — in any language.
+              Ask me anything about weather safety, emergency kits, or local advisories — in any
+              language.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {suggestedPrompts.map(prompt => (
@@ -95,9 +99,18 @@ export function Assistant() {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] rounded-tl-sm px-4 py-3.5 flex gap-1 items-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div
+                    className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  />
+                  <div
+                    className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  />
+                  <div
+                    className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  />
                 </div>
               </div>
             )}
@@ -116,7 +129,10 @@ export function Assistant() {
 
       <div className="p-4 bg-[var(--bg)] border-t border-[var(--border)] shrink-0 pb-[max(env(safe-area-inset-bottom),1rem)]">
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
+          onSubmit={e => {
+            e.preventDefault();
+            handleSend(input);
+          }}
           className="relative flex items-center"
         >
           <input

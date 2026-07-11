@@ -58,11 +58,7 @@ export function TravelAdvisory() {
           onSelect={handleSelect}
           placeholder="Where are you heading?"
         />
-        <Button
-          type="submit"
-          fullWidth
-          disabled={!destination.trim() || status === 'loading'}
-        >
+        <Button type="submit" fullWidth disabled={!destination.trim() || status === 'loading'}>
           Check
         </Button>
       </form>
@@ -74,7 +70,8 @@ export function TravelAdvisory() {
           </div>
           <h3 className="font-semibold text-lg mb-1">Search a destination</h3>
           <p className="text-[var(--text-secondary)] text-sm max-w-[250px]">
-            Pick a place from the list for real-time, AI-generated safety advice based on current weather conditions.
+            Pick a place from the list for real-time, AI-generated safety advice based on current
+            weather conditions.
           </p>
         </div>
       )}
@@ -95,7 +92,9 @@ export function TravelAdvisory() {
 
       {status === 'error' && (
         <div className="p-4 bg-[var(--color-status-red)]/10 border border-[var(--color-status-red)]/20 rounded-2xl text-center text-[var(--color-status-red)]">
-          <p className="text-sm font-medium">{errorMessage ?? 'Failed to generate advisory. Please try again.'}</p>
+          <p className="text-sm font-medium">
+            {errorMessage ?? 'Failed to generate advisory. Please try again.'}
+          </p>
         </div>
       )}
 
@@ -106,17 +105,21 @@ export function TravelAdvisory() {
               <Navigation className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-wider">Advisory For</p>
-              <h3 className="font-semibold text-[15px]">{weather?.resolvedLocation ?? destination}</h3>
+              <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-wider">
+                Advisory For
+              </p>
+              <h3 className="font-semibold text-[15px]">
+                {weather?.resolvedLocation ?? destination}
+              </h3>
             </div>
             {weather && (
-              <span className="text-lg font-bold tracking-tighter shrink-0">{Math.round(weather.temperatureC)}°C</span>
+              <span className="text-lg font-bold tracking-tighter shrink-0">
+                {Math.round(weather.temperatureC)}°C
+              </span>
             )}
           </div>
 
-          <p className="text-[15px] leading-relaxed">
-            {advisory}
-          </p>
+          <p className="text-[15px] leading-relaxed">{advisory}</p>
         </div>
       )}
     </div>

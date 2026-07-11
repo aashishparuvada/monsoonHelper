@@ -31,9 +31,15 @@ interface LocationInput {
 // Resolves weather for either an already-picked point (latitude/longitude —
 // from the location picker, cannot fail) or, as a fallback for profiles
 // saved before the picker existed, a free-typed name (can fail to geocode).
-async function resolveWeather(input: LocationInput): Promise<{ weather: LiveWeather } | { error: string }> {
+async function resolveWeather(
+  input: LocationInput,
+): Promise<{ weather: LiveWeather } | { error: string }> {
   if (input.latitude !== undefined && input.longitude !== undefined) {
-    const weather = await getWeatherAt(input.latitude, input.longitude, input.name || 'Selected location');
+    const weather = await getWeatherAt(
+      input.latitude,
+      input.longitude,
+      input.name || 'Selected location',
+    );
     return { weather };
   }
   if (input.name) {
@@ -71,12 +77,18 @@ app.get('/api/weather', async c => {
     latitude: parseCoord(c.req.query('lat')),
     longitude: parseCoord(c.req.query('lon')),
   });
-  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  if ('error' in result)
+    return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
   return c.json({ weather: result.weather });
 });
 
 app.post('/api/summary', async c => {
-  const body = await c.req.json<{ location?: string; phase?: Phase; latitude?: number; longitude?: number }>();
+  const body = await c.req.json<{
+    location?: string;
+    phase?: Phase;
+    latitude?: number;
+    longitude?: number;
+  }>();
   const phase: Phase = body.phase === 'During' || body.phase === 'After' ? body.phase : 'Before';
 
   const result = await resolveWeather({
@@ -84,7 +96,8 @@ app.post('/api/summary', async c => {
     latitude: parseCoord(body.latitude),
     longitude: parseCoord(body.longitude),
   });
-  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  if ('error' in result)
+    return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
   const weather = result.weather;
 
   const prompt = `You are Monsoon Ready, a calm and reassuring monsoon preparedness assistant.
@@ -128,7 +141,8 @@ app.get('/api/alerts', async c => {
     latitude: parseCoord(c.req.query('lat')),
     longitude: parseCoord(c.req.query('lon')),
   });
-  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  if ('error' in result)
+    return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
   const weather = result.weather;
 
   if (weather.severity === 'safe') {
@@ -158,7 +172,10 @@ app.post('/api/chat', async c => {
   const body = await c.req.json<{ messages?: ChatTurn[] }>();
   const messages = Array.isArray(body.messages)
     ? body.messages
-        .filter((m): m is ChatTurn => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+        .filter(
+          (m): m is ChatTurn =>
+            (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string',
+        )
         .slice(-MAX_CHAT_HISTORY)
         .map(m => ({ ...m, content: m.content.slice(0, MAX_MESSAGE_LENGTH) }))
     : [];
@@ -182,7 +199,8 @@ app.post('/api/travel', async c => {
     latitude: parseCoord(body.latitude),
     longitude: parseCoord(body.longitude),
   });
-  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  if ('error' in result)
+    return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
   const weather = result.weather;
 
   const prompt = `Live weather for ${weather.resolvedLocation}: ${weather.condition},

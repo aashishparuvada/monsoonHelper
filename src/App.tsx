@@ -19,13 +19,20 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'home': return <Home />;
-      case 'plan': return <PreparednessPlan />;
-      case 'assistant': return <Assistant />;
-      case 'alerts': return <Alerts />;
-      case 'travel': return <TravelAdvisory />;
-      case 'settings': return <Settings />;
-      default: return <Home />;
+      case 'home':
+        return <Home />;
+      case 'plan':
+        return <PreparednessPlan />;
+      case 'assistant':
+        return <Assistant />;
+      case 'alerts':
+        return <Alerts />;
+      case 'travel':
+        return <TravelAdvisory />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Home />;
     }
   };
 
@@ -35,11 +42,11 @@ export default function App() {
         <h1 className="font-bold text-lg tracking-tight">Monsoon Ready</h1>
         <ThemeToggle />
       </header>
-      
+
       <main className="flex-1 overflow-y-auto relative w-full max-w-2xl mx-auto">
         {renderScreen()}
       </main>
-      
+
       <BottomNav />
     </div>
   );

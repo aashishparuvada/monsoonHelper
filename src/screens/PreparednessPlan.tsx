@@ -37,7 +37,9 @@ export function PreparednessPlan() {
   }, []);
 
   const toggleItem = (id: string) => {
-    const next = items.map(item => (item.id === id ? { ...item, completed: !item.completed } : item));
+    const next = items.map(item =>
+      item.id === id ? { ...item, completed: !item.completed } : item,
+    );
     setItems(next);
     savePlan(next);
   };
@@ -66,7 +68,9 @@ export function PreparednessPlan() {
       <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)]">
         <div className="flex justify-between items-center mb-3">
           <span className="text-sm font-medium">Overall Progress</span>
-          <span className="text-sm font-medium">{completedCount} of {items.length}</span>
+          <span className="text-sm font-medium">
+            {completedCount} of {items.length}
+          </span>
         </div>
         <div className="h-2 w-full bg-[var(--border)] rounded-full overflow-hidden">
           <div
@@ -78,22 +82,29 @@ export function PreparednessPlan() {
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {(['Before', 'During', 'After'] as Phase[]).map(p => (
-          <Chip key={p} label={`${p} Phase`} active={activePhase === p} onClick={() => setActivePhase(p)} />
+          <Chip
+            key={p}
+            label={`${p} Phase`}
+            active={activePhase === p}
+            onClick={() => setActivePhase(p)}
+          />
         ))}
       </div>
 
       <div className="space-y-3">
-        {status === 'loading' && (
+        {status === 'loading' &&
           [1, 2, 3].map(i => (
-            <div key={i} className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-3 animate-pulse">
+            <div
+              key={i}
+              className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] flex gap-3 animate-pulse"
+            >
               <div className="w-5 h-5 rounded-full bg-[var(--border)]" />
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-[var(--border)] rounded w-3/4" />
                 <div className="h-3 bg-[var(--border)] rounded w-1/2" />
               </div>
             </div>
-          ))
-        )}
+          ))}
 
         {status === 'error' && (
           <div className="text-center py-10">
@@ -113,24 +124,31 @@ export function PreparednessPlan() {
           </div>
         )}
 
-        {status === 'success' && filteredItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => toggleItem(item.id)}
-            className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${
-              item.completed
-                ? 'bg-[var(--bg)] border-[var(--border)] opacity-60'
-                : 'bg-[var(--surface)] border-[var(--border)]'
-            }`}
-          >
-            <div className="mt-0.5 text-brand">
-              {item.completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5 text-[var(--text-secondary)]" />}
-            </div>
-            <span className={`text-[15px] leading-relaxed ${item.completed ? 'line-through text-[var(--text-secondary)]' : ''}`}>
-              {item.task}
-            </span>
-          </button>
-        ))}
+        {status === 'success' &&
+          filteredItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => toggleItem(item.id)}
+              className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${
+                item.completed
+                  ? 'bg-[var(--bg)] border-[var(--border)] opacity-60'
+                  : 'bg-[var(--surface)] border-[var(--border)]'
+              }`}
+            >
+              <div className="mt-0.5 text-brand">
+                {item.completed ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : (
+                  <Circle className="w-5 h-5 text-[var(--text-secondary)]" />
+                )}
+              </div>
+              <span
+                className={`text-[15px] leading-relaxed ${item.completed ? 'line-through text-[var(--text-secondary)]' : ''}`}
+              >
+                {item.task}
+              </span>
+            </button>
+          ))}
       </div>
     </div>
   );
