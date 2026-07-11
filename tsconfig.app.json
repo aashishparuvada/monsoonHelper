@@ -18,6 +18,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src", "index.html"],
+  "include": ["src", "index.html", "vitest.setup.ts"],
   "exclude": ["src/worker"]
 }

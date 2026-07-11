@@ -94,8 +94,23 @@ of these three phases rather than becoming a fourth top-level concept.
 - Repeated async loading/success/error state across screens belongs in the
   shared `useAsyncData` hook (`src/hooks/useAsyncData.ts`), not copy-pasted
   per screen.
-- `npm run check` (typecheck + `eslint .` + `prettier --check .`) must pass
-  before committing — it's what the pre-commit hook runs.
+- `npm run check` (typecheck + `eslint .` + `prettier --check .`) and
+  `npm test` (Vitest — Worker routes, `lib/`, and component tests) must
+  both pass before committing — it's what the pre-commit hook runs.
+
+## Testing conventions
+
+- Worker route tests (`src/worker/index.test.ts`) mock `./gemini` and
+  `global.fetch`, then drive the real Hono app via `app.request(...)` —
+  this exercises the actual input-validation/branching logic, not just
+  the helper modules underneath it.
+- Tests that need `localStorage` or the DOM opt in per-file with a
+  `// @vitest-environment jsdom` docblock; the default environment is
+  plain Node for fast pure-logic tests.
+- `npm test` runs with `NODE_OPTIONS=--no-experimental-webstorage` —
+  recent Node versions ship a native global `localStorage` that shadows
+  jsdom's implementation and lacks methods like `.clear()`; don't remove
+  this flag when touching the test script.
 
 ## Git workflow
 
@@ -103,5 +118,5 @@ of these three phases rather than becoming a fourth top-level concept.
   commit at the end) — history should read as genuine incremental
   development.
 - A local pre-commit hook (`.git/hooks/pre-commit`, not tracked by git)
-  blocks commits that stage `.env`/`.dev.vars` and runs `npm run check`.
-  Don't bypass it with `--no-verify`.
+  blocks commits that stage `.env`/`.dev.vars` and runs `npm run check`
+  and `npm test`. Don't bypass it with `--no-verify`.
