@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "monsoon-ready",
+  "name": "monsoonhelper",
   "compatibility_date": "2026-07-01",
   "main": "./src/worker/index.ts",
   "assets": {
