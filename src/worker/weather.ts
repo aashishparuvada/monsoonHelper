@@ -93,23 +93,28 @@ export async function getLiveWeather(locationQuery: string): Promise<LiveWeather
   };
 }
 
+// Open-Meteo's geocoding API only supports forward search, not reverse
+// lookup, so "use my current location" uses BigDataCloud's free,
+// keyless reverse-geocoding endpoint instead.
 export async function reverseGeocode(latitude: number, longitude: number): Promise<string | null> {
-  const url = new URL('https://geocoding-api.open-meteo.com/v1/reverse');
+  const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
   url.searchParams.set('latitude', String(latitude));
   url.searchParams.set('longitude', String(longitude));
-  url.searchParams.set('language', 'en');
-  url.searchParams.set('format', 'json');
+  url.searchParams.set('localityLanguage', 'en');
 
   const res = await fetch(url.toString());
   if (!res.ok) return null;
 
   const data = await res.json() as {
-    results?: Array<{ name: string; admin1?: string; country?: string }>;
+    city?: string;
+    locality?: string;
+    principalSubdivision?: string;
+    countryName?: string;
   };
-  const first = data.results?.[0];
-  if (!first) return null;
+  const place = data.city || data.locality;
+  if (!place) return null;
 
-  return [first.name, first.admin1, first.country].filter(Boolean).join(', ');
+  return [place, data.principalSubdivision, data.countryName].filter(Boolean).join(', ');
 }
 
 export { deriveSeverity, describeWeatherCode };
