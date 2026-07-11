@@ -60,12 +60,24 @@ function deriveSeverity(code: number, precipitationMm: number, windSpeedKmh: num
   return 'safe';
 }
 
+// Open-Meteo's geocoding search matches against a bare place name — it
+// returns zero results for a "City, State, Country" compound string, which
+// is exactly the display format we build ourselves (searchLocations below,
+// and BigDataCloud's reverse geocode) and save into a profile's `location`.
+// Confirmed live: searching "Visakhapatnam, Andhra Pradesh, India" returns
+// nothing while "Visakhapatnam" alone resolves — so any fallback path that
+// re-searches a saved display string (profiles saved before lat/lon were
+// captured) needs the first segment only.
+function firstSegment(query: string): string {
+  return query.split(',')[0]?.trim() || query;
+}
+
 // Returns up to `count` candidate places for a typed query, so the frontend
 // can offer a Google-Weather-style picker instead of guessing a single
 // match and risking a "location not found" dead end.
 export async function searchLocations(query: string, count = 6): Promise<ResolvedLocation[]> {
   const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
-  url.searchParams.set('name', query);
+  url.searchParams.set('name', firstSegment(query));
   url.searchParams.set('count', String(count));
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
