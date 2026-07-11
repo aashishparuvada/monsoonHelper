@@ -1,34 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Info, RefreshCw, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
 import { WeatherAlert } from '../types';
 
-type Status = 'loading' | 'success' | 'error';
-
 export function Alerts() {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
-  const [status, setStatus] = useState<Status>('loading');
 
   const profile = getProfile() ?? DEFAULT_PROFILE;
   const locationRef = toLocationRef(profile);
   const location = profile.location || DEFAULT_PROFILE.location;
 
-  const fetchAlerts = async () => {
-    setStatus('loading');
-    try {
-      const res = await api.getAlerts(locationRef);
-      setAlerts(res.alerts);
-      setStatus('success');
-    } catch {
-      setStatus('error');
-    }
-  };
+  const alertsTask = useCallback(async () => {
+    const res = await api.getAlerts(locationRef);
+    setAlerts(res.alerts);
+    // locationRef is a fresh object every render; depending on its identity
+    // instead of its primitive fields would recreate this callback (and
+    // retrigger the effect below) on every render, causing a fetch loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationRef.name, locationRef.latitude, locationRef.longitude]);
+  const { status, run: fetchAlerts } = useAsyncData(alertsTask);
 
   useEffect(() => {
     fetchAlerts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchAlerts]);
 
   const getIcon = (severity: string) => {
     switch (severity) {
@@ -71,7 +67,7 @@ export function Alerts() {
         </button>
       </div>
 
-      {status === 'loading' && (
+      {(status === 'idle' || status === 'loading') && (
         <div className="space-y-4">
           {[1, 2].map(i => (
             <div

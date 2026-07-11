@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CloudRain, MapPin, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { api } from '../api';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
 import { getStoredPlan } from '../lib/plan';
 import { LiveWeather, Phase } from '../types';
 import { PhaseIndicator } from '../components/ui/PhaseIndicator';
-
-type Status = 'loading' | 'success' | 'error';
 
 export function Home() {
   const { navigate } = useAppContext();
@@ -17,28 +16,28 @@ export function Home() {
   const [phase, setPhase] = useState<Phase>('Before');
   const [summary, setSummary] = useState<string | null>(null);
   const [weather, setWeather] = useState<LiveWeather | null>(null);
-  const [status, setStatus] = useState<Status>('loading');
   const [alertCount, setAlertCount] = useState<number | null>(null);
 
   const planItems = getStoredPlan() ?? [];
   const planCompleted = planItems.filter(i => i.completed).length;
 
-  const fetchSummary = async () => {
-    setStatus('loading');
-    try {
-      const res = await api.getSummary(locationRef, phase);
+  const summaryTask = useCallback(
+    async (forPhase: Phase) => {
+      const res = await api.getSummary(locationRef, forPhase);
       setSummary(res.summary);
       setWeather(res.weather);
-      setStatus('success');
-    } catch {
-      setStatus('error');
-    }
-  };
+    },
+    // locationRef is a fresh object every render; depending on its identity
+    // instead of its primitive fields would recreate this callback (and
+    // retrigger the effect below) on every render, causing a fetch loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [locationRef.name, locationRef.latitude, locationRef.longitude],
+  );
+  const { status, run: fetchSummary } = useAsyncData(summaryTask);
 
   useEffect(() => {
-    fetchSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+    fetchSummary(phase);
+  }, [phase, fetchSummary]);
 
   useEffect(() => {
     api
@@ -78,7 +77,7 @@ export function Home() {
           )}
         </div>
 
-        {status === 'loading' && (
+        {(status === 'idle' || status === 'loading') && (
           <div className="space-y-2 animate-pulse">
             <div className="h-4 bg-[var(--border)] rounded w-3/4"></div>
             <div className="h-4 bg-[var(--border)] rounded w-full"></div>
@@ -92,7 +91,7 @@ export function Home() {
               Failed to load risk summary for {profile.location}.
             </p>
             <button
-              onClick={fetchSummary}
+              onClick={() => fetchSummary(phase)}
               className="flex items-center gap-2 text-sm font-medium text-brand bg-brand/10 px-3 py-1.5 rounded-full"
             >
               <RefreshCw className="w-4 h-4" /> Retry

@@ -4,6 +4,7 @@ import { Map, Navigation } from 'lucide-react';
 import { api } from '../api';
 import { Button } from '../components/ui/Button';
 import { LocationAutocomplete } from '../components/ui/LocationAutocomplete';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { LiveWeather, LocationRef, ResolvedLocation } from '../types';
 
 export function TravelAdvisory() {
@@ -11,21 +12,16 @@ export function TravelAdvisory() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [advisory, setAdvisory] = useState<string | null>(null);
   const [weather, setWeather] = useState<LiveWeather | null>(null);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const runCheck = async (ref: LocationRef) => {
-    setStatus('loading');
-    try {
-      const res = await api.getTravelAdvisory(ref);
-      setAdvisory(res.advisory);
-      setWeather(res.weather);
-      setStatus('success');
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to generate advisory.');
-      setStatus('error');
-    }
-  };
+  const {
+    status,
+    errorMessage,
+    run: runCheck,
+  } = useAsyncData(async (ref: LocationRef) => {
+    const res = await api.getTravelAdvisory(ref);
+    setAdvisory(res.advisory);
+    setWeather(res.weather);
+  });
 
   const handleInputChange = (text: string) => {
     setDestination(text);
