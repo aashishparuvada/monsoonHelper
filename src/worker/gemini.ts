@@ -4,6 +4,12 @@ const MODEL = 'gemini-2.5-flash';
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [500, 1500];
 
+// Short, targeted replies by default (summaries/alerts/advisories/chat are
+// all meant to be a paragraph or two); callers that genuinely need more
+// (the JSON checklist) pass a higher explicit cap. Bounding this saves
+// real latency and cost on every call instead of letting the model run on.
+const DEFAULT_MAX_OUTPUT_TOKENS = 500;
+
 function isRetryableStatus(status: unknown): boolean {
   return status === 503 || status === 429;
 }
@@ -26,12 +32,24 @@ async function withRetry<T>(call: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
-export async function generateText(apiKey: string, prompt: string): Promise<string> {
+// gemini-2.5-flash's "thinking" tokens are drawn from the same
+// maxOutputTokens budget, so a tight cap combined with default thinking
+// left the plan endpoint's response truncated mid-JSON (a real bug this
+// surfaced). None of these prompts need multi-step reasoning, so thinking
+// is disabled outright — faster and cheaper, and removes the truncation risk.
+const NO_THINKING = { thinkingBudget: 0 };
+
+export async function generateText(
+  apiKey: string,
+  prompt: string,
+  maxOutputTokens = DEFAULT_MAX_OUTPUT_TOKENS,
+): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: MODEL,
       contents: prompt,
+      config: { maxOutputTokens, thinkingConfig: NO_THINKING },
     }),
   );
   return response.text ?? '';
@@ -56,7 +74,11 @@ export async function generateChatReply(
   const response = await withRetry(() =>
     ai.models.generateContent({
       model: MODEL,
-      config: { systemInstruction },
+      config: {
+        systemInstruction,
+        maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
+        thinkingConfig: NO_THINKING,
+      },
       contents,
     }),
   );

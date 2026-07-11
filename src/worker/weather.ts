@@ -34,6 +34,20 @@ const WEATHER_CODE_LABELS: Record<number, string> = {
 const SEVERE_CODES = new Set([65, 82, 95, 96, 99]);
 const CAUTION_CODES = new Set([51, 53, 55, 56, 57, 61, 63, 66, 67, 80, 81]);
 
+// Geocoding results (name -> coordinates) are effectively static; cache
+// them at Cloudflare's edge for a day so repeat lookups (the same city
+// typed by many users, or the same profile loading Home repeatedly) skip
+// the round trip to Open-Meteo/BigDataCloud entirely.
+const GEOCODE_CACHE_TTL_SECONDS = 60 * 60 * 24;
+// Forecasts genuinely change; a short edge cache still absorbs bursts of
+// requests for the same place within the same few minutes without making
+// the "real-time" data stale.
+const FORECAST_CACHE_TTL_SECONDS = 60 * 5;
+
+function cachedFetch(url: string, cacheTtl: number): Promise<Response> {
+  return fetch(url, { cf: { cacheTtl, cacheEverything: true } });
+}
+
 function describeWeatherCode(code: number): string {
   return WEATHER_CODE_LABELS[code] ?? 'Unknown conditions';
 }
@@ -56,7 +70,7 @@ export async function searchLocations(query: string, count = 6): Promise<Resolve
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
 
-  const res = await fetch(url.toString());
+  const res = await cachedFetch(url.toString(), GEOCODE_CACHE_TTL_SECONDS);
   if (!res.ok) return [];
 
   const data = (await res.json()) as {
@@ -95,7 +109,7 @@ async function fetchForecast(
   url.searchParams.set('forecast_days', '1');
   url.searchParams.set('timezone', 'auto');
 
-  const res = await fetch(url.toString());
+  const res = await cachedFetch(url.toString(), FORECAST_CACHE_TTL_SECONDS);
   if (!res.ok) throw new Error(`Open-Meteo forecast request failed with ${res.status}`);
 
   const data = (await res.json()) as {
@@ -156,7 +170,7 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
   url.searchParams.set('longitude', String(longitude));
   url.searchParams.set('localityLanguage', 'en');
 
-  const res = await fetch(url.toString());
+  const res = await cachedFetch(url.toString(), GEOCODE_CACHE_TTL_SECONDS);
   if (!res.ok) return null;
 
   const data = (await res.json()) as {

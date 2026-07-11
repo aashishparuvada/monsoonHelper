@@ -126,11 +126,14 @@ JSON array of objects with this structure: [{ "id": "short-unique-id", "task": "
 "completed": false, "phase": "Before" | "During" | "After" }]. Include 2-3 concrete, actionable
 items per phase (Before, During, After). Do not use markdown code fences, return raw JSON only.`;
 
-  const raw = await generateText(c.env.GEMINI_API_KEY, prompt);
+  // The JSON checklist itself runs well past the 500-token default reply
+  // budget once every phase's tasks are spelled out.
+  const raw = await generateText(c.env.GEMINI_API_KEY, prompt, 1200);
   try {
     const plan = parseJsonResponse<PlanItem[]>(raw);
     return c.json({ plan });
-  } catch {
+  } catch (err) {
+    console.error('plan JSON parse failed', { raw, err });
     return c.json({ error: 'Failed to generate a valid plan' }, 502);
   }
 });
