@@ -1,4 +1,4 @@
-import { LiveWeather, Message, Phase, PlanItem, UserProfile, WeatherAlert } from './types';
+import { LiveWeather, LocationRef, Message, Phase, PlanItem, ResolvedLocation, UserProfile, WeatherAlert } from './types';
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -22,12 +22,29 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json();
 }
 
+function locationQuery(location: LocationRef): string {
+  const params = new URLSearchParams({ location: location.name });
+  if (location.latitude !== undefined && location.longitude !== undefined) {
+    params.set('lat', String(location.latitude));
+    params.set('lon', String(location.longitude));
+  }
+  return params.toString();
+}
+
 export const api = {
-  getWeather(location: string) {
-    return getJson<{ weather: LiveWeather }>(`/api/weather?location=${encodeURIComponent(location)}`);
+  searchLocations(query: string) {
+    return getJson<{ results: ResolvedLocation[] }>(`/api/geocode/search?q=${encodeURIComponent(query)}`);
   },
-  getSummary(location: string, phase: Phase) {
-    return postJson<{ summary: string; weather: LiveWeather }>('/api/summary', { location, phase });
+  getWeather(location: LocationRef) {
+    return getJson<{ weather: LiveWeather }>(`/api/weather?${locationQuery(location)}`);
+  },
+  getSummary(location: LocationRef, phase: Phase) {
+    return postJson<{ summary: string; weather: LiveWeather }>('/api/summary', {
+      location: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      phase,
+    });
   },
   getPlan(profile: UserProfile) {
     return postJson<{ plan: PlanItem[] }>('/api/plan', { profile });
@@ -35,11 +52,15 @@ export const api = {
   chat(messages: Pick<Message, 'role' | 'content'>[]) {
     return postJson<{ text: string }>('/api/chat', { messages });
   },
-  getAlerts(location: string) {
-    return getJson<{ alerts: WeatherAlert[] }>(`/api/alerts?location=${encodeURIComponent(location)}`);
+  getAlerts(location: LocationRef) {
+    return getJson<{ alerts: WeatherAlert[] }>(`/api/alerts?${locationQuery(location)}`);
   },
-  getTravelAdvisory(destination: string) {
-    return postJson<{ advisory: string; weather: LiveWeather }>('/api/travel', { destination });
+  getTravelAdvisory(destination: LocationRef) {
+    return postJson<{ advisory: string; weather: LiveWeather }>('/api/travel', {
+      destination: destination.name,
+      latitude: destination.latitude,
+      longitude: destination.longitude,
+    });
   },
   reverseGeocode(lat: number, lon: number) {
     return getJson<{ location: string }>(`/api/geocode/reverse?lat=${lat}&lon=${lon}`);

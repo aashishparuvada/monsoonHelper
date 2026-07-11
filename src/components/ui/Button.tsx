@@ -5,7 +5,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-export function Button({ variant = 'primary', fullWidth, className = '', children, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', fullWidth, className = '', type = 'button', children, ...props }: ButtonProps) {
   const baseClasses = "inline-flex items-center justify-center font-medium rounded-xl transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand";
   const sizeClasses = "px-4 py-3 text-sm";
   const widthClasses = fullWidth ? "w-full" : "";
@@ -19,6 +19,7 @@ export function Button({ variant = 'primary', fullWidth, className = '', childre
 
   return (
     <button
+      type={type}
       className={`${baseClasses} ${sizeClasses} ${widthClasses} ${variantClasses[variant]} ${className}`}
       {...props}
     >

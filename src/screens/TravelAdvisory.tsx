@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Map, Navigation, Search } from 'lucide-react';
+import { Map, Navigation } from 'lucide-react';
 import { api } from '../api';
-import { LiveWeather } from '../types';
+import { Button } from '../components/ui/Button';
+import { LocationAutocomplete } from '../components/ui/LocationAutocomplete';
+import { LiveWeather, LocationRef, ResolvedLocation } from '../types';
 
 export function TravelAdvisory() {
   const [destination, setDestination] = useState('');
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [advisory, setAdvisory] = useState<string | null>(null);
   const [weather, setWeather] = useState<LiveWeather | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const checkSafety = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!destination.trim()) return;
-
+  const runCheck = async (ref: LocationRef) => {
     setStatus('loading');
     try {
-      const res = await api.getTravelAdvisory(destination);
+      const res = await api.getTravelAdvisory(ref);
       setAdvisory(res.advisory);
       setWeather(res.weather);
       setStatus('success');
@@ -27,6 +27,23 @@ export function TravelAdvisory() {
     }
   };
 
+  const handleInputChange = (text: string) => {
+    setDestination(text);
+    setCoords(null);
+  };
+
+  const handleSelect = (loc: ResolvedLocation) => {
+    setDestination(loc.name);
+    setCoords({ latitude: loc.latitude, longitude: loc.longitude });
+    runCheck({ name: loc.name, latitude: loc.latitude, longitude: loc.longitude });
+  };
+
+  const checkSafety = (e: FormEvent) => {
+    e.preventDefault();
+    if (!destination.trim()) return;
+    runCheck({ name: destination, latitude: coords?.latitude, longitude: coords?.longitude });
+  };
+
   return (
     <div className="p-4 pb-20 space-y-6">
       <div className="mb-6">
@@ -34,24 +51,20 @@ export function TravelAdvisory() {
         <p className="text-sm text-[var(--text-secondary)]">Check route safety before you go</p>
       </div>
 
-      <form onSubmit={checkSafety} className="relative">
-        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-[var(--text-secondary)]" />
-        </div>
-        <input 
-          type="text" 
+      <form onSubmit={checkSafety} className="space-y-3">
+        <LocationAutocomplete
           value={destination}
-          onChange={e => setDestination(e.target.value)}
+          onInputChange={handleInputChange}
+          onSelect={handleSelect}
           placeholder="Where are you heading?"
-          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:border-[var(--color-brand)] transition-colors text-[15px]"
         />
-        <button 
+        <Button
           type="submit"
+          fullWidth
           disabled={!destination.trim() || status === 'loading'}
-          className="absolute inset-y-2 right-2 bg-[var(--text-primary)] text-[var(--bg)] px-4 rounded-xl text-sm font-medium disabled:opacity-50 transition-opacity"
         >
           Check
-        </button>
+        </Button>
       </form>
 
       {status === 'idle' && (
@@ -61,7 +74,7 @@ export function TravelAdvisory() {
           </div>
           <h3 className="font-semibold text-lg mb-1">Search a destination</h3>
           <p className="text-[var(--text-secondary)] text-sm max-w-[250px]">
-            Get real-time, AI-generated safety advice based on current weather conditions.
+            Pick a place from the list for real-time, AI-generated safety advice based on current weather conditions.
           </p>
         </div>
       )}

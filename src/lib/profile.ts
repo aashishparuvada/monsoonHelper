@@ -1,4 +1,4 @@
-import { UserProfile } from '../types';
+import { LocationRef, UserProfile } from '../types';
 
 const STORAGE_KEY = 'userProfile';
 
@@ -25,4 +25,8 @@ export function saveProfile(profile: UserProfile): void {
 
 export function clearProfile(): void {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+export function toLocationRef(profile: UserProfile): LocationRef {
+  return { name: profile.location, latitude: profile.latitude, longitude: profile.longitude };
 }

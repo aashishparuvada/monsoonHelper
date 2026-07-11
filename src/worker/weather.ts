@@ -1,4 +1,4 @@
-import type { LiveWeather, Severity } from '../types';
+import type { LiveWeather, ResolvedLocation, Severity } from '../types';
 
 const WEATHER_CODE_LABELS: Record<number, string> = {
   0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
@@ -29,46 +29,46 @@ function deriveSeverity(code: number, precipitationMm: number, windSpeedKmh: num
   return 'safe';
 }
 
-interface GeocodeResult {
-  latitude: number;
-  longitude: number;
-  resolvedName: string;
-}
-
-async function geocodeLocation(query: string): Promise<GeocodeResult | null> {
+// Returns up to `count` candidate places for a typed query, so the frontend
+// can offer a Google-Weather-style picker instead of guessing a single
+// match and risking a "location not found" dead end.
+export async function searchLocations(query: string, count = 6): Promise<ResolvedLocation[]> {
   const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
   url.searchParams.set('name', query);
-  url.searchParams.set('count', '1');
+  url.searchParams.set('count', String(count));
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
 
   const res = await fetch(url.toString());
-  if (!res.ok) return null;
+  if (!res.ok) return [];
 
   const data = await res.json() as {
     results?: Array<{ latitude: number; longitude: number; name: string; admin1?: string; country?: string }>;
   };
-  const first = data.results?.[0];
-  if (!first) return null;
 
-  const resolvedName = [first.name, first.admin1, first.country].filter(Boolean).join(', ');
-  return { latitude: first.latitude, longitude: first.longitude, resolvedName };
+  return (data.results ?? []).map(r => ({
+    name: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
+    latitude: r.latitude,
+    longitude: r.longitude,
+  }));
 }
 
-export async function getLiveWeather(locationQuery: string): Promise<LiveWeather | null> {
-  const place = await geocodeLocation(locationQuery);
-  if (!place) return null;
+async function geocodeLocation(query: string): Promise<ResolvedLocation | null> {
+  const [first] = await searchLocations(query, 1);
+  return first ?? null;
+}
 
+async function fetchForecast(latitude: number, longitude: number): Promise<Omit<LiveWeather, 'resolvedLocation' | 'severity' | 'condition'> & { weatherCode: number }> {
   const url = new URL('https://api.open-meteo.com/v1/forecast');
-  url.searchParams.set('latitude', String(place.latitude));
-  url.searchParams.set('longitude', String(place.longitude));
+  url.searchParams.set('latitude', String(latitude));
+  url.searchParams.set('longitude', String(longitude));
   url.searchParams.set('current', 'temperature_2m,precipitation,weather_code,wind_speed_10m');
   url.searchParams.set('hourly', 'precipitation_probability');
   url.searchParams.set('forecast_days', '1');
   url.searchParams.set('timezone', 'auto');
 
   const res = await fetch(url.toString());
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error(`Open-Meteo forecast request failed with ${res.status}`);
 
   const data = await res.json() as {
     current: { temperature_2m: number; precipitation: number; weather_code: number; wind_speed_10m: number };
@@ -80,17 +80,34 @@ export async function getLiveWeather(locationQuery: string): Promise<LiveWeather
   const { temperature_2m, precipitation, weather_code, wind_speed_10m } = data.current;
 
   return {
-    resolvedLocation: place.resolvedName,
-    latitude: place.latitude,
-    longitude: place.longitude,
+    latitude,
+    longitude,
     temperatureC: temperature_2m,
     precipitationMm: precipitation,
     windSpeedKmh: wind_speed_10m,
     weatherCode: weather_code,
-    condition: describeWeatherCode(weather_code),
-    severity: deriveSeverity(weather_code, precipitation, wind_speed_10m),
     precipitationProbabilityNext6h,
   };
+}
+
+// Weather for an already-resolved point (e.g. a picker selection) — cannot
+// fail with "location not found" since the coordinates are already known good.
+export async function getWeatherAt(latitude: number, longitude: number, displayName: string): Promise<LiveWeather> {
+  const forecast = await fetchForecast(latitude, longitude);
+  return {
+    ...forecast,
+    resolvedLocation: displayName,
+    condition: describeWeatherCode(forecast.weatherCode),
+    severity: deriveSeverity(forecast.weatherCode, forecast.precipitationMm, forecast.windSpeedKmh),
+  };
+}
+
+// Weather for a free-typed name — kept for profiles saved before the
+// picker existed. Can return null if the name doesn't geocode.
+export async function getLiveWeather(locationQuery: string): Promise<LiveWeather | null> {
+  const place = await geocodeLocation(locationQuery);
+  if (!place) return null;
+  return getWeatherAt(place.latitude, place.longitude, place.name);
 }
 
 // Open-Meteo's geocoding API only supports forward search, not reverse

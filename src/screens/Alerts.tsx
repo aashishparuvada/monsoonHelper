@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Info, RefreshCw, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
-import { DEFAULT_PROFILE, getProfile } from '../lib/profile';
+import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
 import { WeatherAlert } from '../types';
 
 type Status = 'loading' | 'success' | 'error';
@@ -10,12 +10,14 @@ export function Alerts() {
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [status, setStatus] = useState<Status>('loading');
 
-  const location = (getProfile() ?? DEFAULT_PROFILE).location || DEFAULT_PROFILE.location;
+  const profile = getProfile() ?? DEFAULT_PROFILE;
+  const locationRef = toLocationRef(profile);
+  const location = profile.location || DEFAULT_PROFILE.location;
 
   const fetchAlerts = async () => {
     setStatus('loading');
     try {
-      const res = await api.getAlerts(location);
+      const res = await api.getAlerts(locationRef);
       setAlerts(res.alerts);
       setStatus('success');
     } catch {

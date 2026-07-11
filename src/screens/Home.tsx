@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CloudRain, MapPin, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { api } from '../api';
-import { DEFAULT_PROFILE, getProfile } from '../lib/profile';
+import { DEFAULT_PROFILE, getProfile, toLocationRef } from '../lib/profile';
 import { getStoredPlan } from '../lib/plan';
 import { LiveWeather, Phase } from '../types';
 import { PhaseIndicator } from '../components/ui/PhaseIndicator';
@@ -12,6 +12,7 @@ type Status = 'loading' | 'success' | 'error';
 export function Home() {
   const { navigate } = useAppContext();
   const profile = getProfile() ?? DEFAULT_PROFILE;
+  const locationRef = toLocationRef(profile);
 
   const [phase, setPhase] = useState<Phase>('Before');
   const [summary, setSummary] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function Home() {
   const fetchSummary = async () => {
     setStatus('loading');
     try {
-      const res = await api.getSummary(profile.location, phase);
+      const res = await api.getSummary(locationRef, phase);
       setSummary(res.summary);
       setWeather(res.weather);
       setStatus('success');
@@ -40,7 +41,7 @@ export function Home() {
   }, [phase]);
 
   useEffect(() => {
-    api.getAlerts(profile.location)
+    api.getAlerts(locationRef)
       .then(res => setAlertCount(res.alerts.length))
       .catch(() => setAlertCount(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps

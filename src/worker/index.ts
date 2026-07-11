@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Phase, PlanItem, UserProfile, WeatherAlert } from '../types';
+import type { LiveWeather, Phase, PlanItem, UserProfile, WeatherAlert } from '../types';
 import { generateChatReply, generateText, parseJsonResponse, type ChatTurn } from './gemini';
-import { getLiveWeather, reverseGeocode } from './weather';
+import { getLiveWeather, getWeatherAt, reverseGeocode, searchLocations } from './weather';
 
 interface Env {
   GEMINI_API_KEY: string;
@@ -17,20 +17,45 @@ function cleanString(value: unknown, maxLength = MAX_INPUT_LENGTH): string {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 }
 
-app.get('/api/weather', async c => {
-  const location = cleanString(c.req.query('location'));
-  if (!location) return c.json({ error: 'A location is required' }, 400);
+function parseCoord(value: unknown): number | undefined {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
 
-  const weather = await getLiveWeather(location);
-  if (!weather) return c.json({ error: `Could not find weather for "${location}"` }, 404);
+interface LocationInput {
+  name?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
-  return c.json({ weather });
+// Resolves weather for either an already-picked point (latitude/longitude —
+// from the location picker, cannot fail) or, as a fallback for profiles
+// saved before the picker existed, a free-typed name (can fail to geocode).
+async function resolveWeather(input: LocationInput): Promise<{ weather: LiveWeather } | { error: string }> {
+  if (input.latitude !== undefined && input.longitude !== undefined) {
+    const weather = await getWeatherAt(input.latitude, input.longitude, input.name || 'Selected location');
+    return { weather };
+  }
+  if (input.name) {
+    const weather = await getLiveWeather(input.name);
+    if (weather) return { weather };
+    return { error: `Could not find weather for "${input.name}"` };
+  }
+  return { error: 'A location is required' };
+}
+
+app.get('/api/geocode/search', async c => {
+  const query = cleanString(c.req.query('q'));
+  if (!query) return c.json({ results: [] });
+
+  const results = await searchLocations(query);
+  return c.json({ results });
 });
 
 app.get('/api/geocode/reverse', async c => {
-  const lat = Number(c.req.query('lat'));
-  const lon = Number(c.req.query('lon'));
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+  const lat = parseCoord(c.req.query('lat'));
+  const lon = parseCoord(c.req.query('lon'));
+  if (lat === undefined || lon === undefined) {
     return c.json({ error: 'lat and lon query params are required' }, 400);
   }
 
@@ -40,14 +65,27 @@ app.get('/api/geocode/reverse', async c => {
   return c.json({ location });
 });
 
-app.post('/api/summary', async c => {
-  const body = await c.req.json<{ location?: string; phase?: Phase }>();
-  const location = cleanString(body.location);
-  const phase: Phase = body.phase === 'During' || body.phase === 'After' ? body.phase : 'Before';
-  if (!location) return c.json({ error: 'A location is required' }, 400);
+app.get('/api/weather', async c => {
+  const result = await resolveWeather({
+    name: cleanString(c.req.query('location')),
+    latitude: parseCoord(c.req.query('lat')),
+    longitude: parseCoord(c.req.query('lon')),
+  });
+  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  return c.json({ weather: result.weather });
+});
 
-  const weather = await getLiveWeather(location);
-  if (!weather) return c.json({ error: `Could not find weather for "${location}"` }, 404);
+app.post('/api/summary', async c => {
+  const body = await c.req.json<{ location?: string; phase?: Phase; latitude?: number; longitude?: number }>();
+  const phase: Phase = body.phase === 'During' || body.phase === 'After' ? body.phase : 'Before';
+
+  const result = await resolveWeather({
+    name: cleanString(body.location),
+    latitude: parseCoord(body.latitude),
+    longitude: parseCoord(body.longitude),
+  });
+  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  const weather = result.weather;
 
   const prompt = `You are Monsoon Ready, a calm and reassuring monsoon preparedness assistant.
 Live weather for ${weather.resolvedLocation}: ${weather.condition}, ${weather.temperatureC}°C,
@@ -85,11 +123,13 @@ items per phase (Before, During, After). Do not use markdown code fences, return
 });
 
 app.get('/api/alerts', async c => {
-  const location = cleanString(c.req.query('location'));
-  if (!location) return c.json({ error: 'A location is required' }, 400);
-
-  const weather = await getLiveWeather(location);
-  if (!weather) return c.json({ error: `Could not find weather for "${location}"` }, 404);
+  const result = await resolveWeather({
+    name: cleanString(c.req.query('location')),
+    latitude: parseCoord(c.req.query('lat')),
+    longitude: parseCoord(c.req.query('lon')),
+  });
+  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  const weather = result.weather;
 
   if (weather.severity === 'safe') {
     return c.json({ alerts: [] as WeatherAlert[] });
@@ -135,12 +175,15 @@ and focused on weather safety, emergency preparedness, and local advisories.`;
 });
 
 app.post('/api/travel', async c => {
-  const body = await c.req.json<{ destination?: string }>();
-  const destination = cleanString(body.destination);
-  if (!destination) return c.json({ error: 'A destination is required' }, 400);
+  const body = await c.req.json<{ destination?: string; latitude?: number; longitude?: number }>();
 
-  const weather = await getLiveWeather(destination);
-  if (!weather) return c.json({ error: `Could not find "${destination}"` }, 404);
+  const result = await resolveWeather({
+    name: cleanString(body.destination),
+    latitude: parseCoord(body.latitude),
+    longitude: parseCoord(body.longitude),
+  });
+  if ('error' in result) return c.json({ error: result.error }, result.error.includes('required') ? 400 : 404);
+  const weather = result.weather;
 
   const prompt = `Live weather for ${weather.resolvedLocation}: ${weather.condition},
 ${weather.temperatureC}°C, ${weather.precipitationMm}mm precipitation in the last hour, wind

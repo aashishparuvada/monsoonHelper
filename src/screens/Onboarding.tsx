@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { LocateFixed } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { api } from '../api';
@@ -6,12 +7,14 @@ import { DEFAULT_PROFILE, saveProfile } from '../lib/profile';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
 import { Input } from '../components/ui/Input';
+import { LocationAutocomplete } from '../components/ui/LocationAutocomplete';
 
 export function Onboarding() {
   const { setOnboardingComplete, navigate } = useAppContext();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [context, setContext] = useState<string[]>([]);
   const [language, setLanguage] = useState('');
   const [locating, setLocating] = useState(false);
@@ -21,6 +24,11 @@ export function Onboarding() {
 
   const toggleContext = (opt: string) => {
     setContext(prev => prev.includes(opt) ? prev.filter(c => c !== opt) : [...prev, opt]);
+  };
+
+  const handleLocationInputChange = (text: string) => {
+    setLocation(text);
+    setCoords(null); // typing invalidates a previously picked point
   };
 
   const useCurrentLocation = () => {
@@ -33,11 +41,10 @@ export function Onboarding() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const { location: resolved } = await api.reverseGeocode(
-            position.coords.latitude,
-            position.coords.longitude,
-          );
+          const { latitude, longitude } = position.coords;
+          const { location: resolved } = await api.reverseGeocode(latitude, longitude);
           setLocation(resolved);
+          setCoords({ latitude, longitude });
         } catch {
           setLocateError('Could not resolve your location. Please type it in.');
         } finally {
@@ -55,6 +62,8 @@ export function Onboarding() {
     saveProfile({
       name: name.trim() || DEFAULT_PROFILE.name,
       location: location.trim() || DEFAULT_PROFILE.location,
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
       context,
       language,
     });
@@ -62,19 +71,28 @@ export function Onboarding() {
     navigate('home');
   };
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (step < 3) setStep(step + 1);
+    else finish();
+  };
+
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-[var(--bg)] text-[var(--text-primary)] p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col min-h-[100dvh] bg-[var(--bg)] text-[var(--text-primary)] p-6"
+    >
       <div className="flex-1 max-w-md mx-auto w-full pt-12">
         <div className="flex justify-between items-center mb-12">
           <div className="flex gap-2">
             {[1, 2, 3].map(i => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-[var(--color-brand)]' : 'w-2 bg-[var(--border)]'}`}
               />
             ))}
           </div>
-          <button onClick={finish} className="text-sm font-medium text-[var(--text-secondary)]">Skip</button>
+          <button type="button" onClick={finish} className="text-sm font-medium text-[var(--text-secondary)]">Skip</button>
         </div>
 
         {step === 1 && (
@@ -89,6 +107,7 @@ export function Onboarding() {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Your name"
+                autoFocus
               />
             </div>
           </div>
@@ -101,11 +120,12 @@ export function Onboarding() {
               We use your location to provide relevant weather alerts and travel advisories.
             </p>
             <div className="space-y-4">
-              <Input
+              <LocationAutocomplete
                 label="City or region"
                 value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder="e.g. Mumbai, Maharashtra"
+                onInputChange={handleLocationInputChange}
+                onSelect={loc => { setLocation(loc.name); setCoords({ latitude: loc.latitude, longitude: loc.longitude }); }}
+                placeholder="Start typing a city…"
               />
               <button
                 type="button"
@@ -151,14 +171,10 @@ export function Onboarding() {
       </div>
 
       <div className="mt-auto pt-6">
-        <Button
-          fullWidth
-          onClick={() => step < 3 ? setStep(step + 1) : finish()}
-          className="py-4 text-lg"
-        >
+        <Button type="submit" fullWidth className="py-4 text-lg">
           {step === 3 ? 'Get Started' : 'Continue'}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

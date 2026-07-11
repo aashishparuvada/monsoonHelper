@@ -5,8 +5,22 @@ export type Severity = 'safe' | 'caution' | 'severe';
 export interface UserProfile {
   name: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   context: string[];
   language: string;
+}
+
+export interface ResolvedLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface LocationRef {
+  name: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface WeatherAlert {
